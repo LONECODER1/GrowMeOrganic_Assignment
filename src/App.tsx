@@ -64,11 +64,11 @@ const App: React.FC = () => {
     const headerCheckboxWithChevronDown = () => {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem' }}>
-
                 <Button
                     icon={<FaChevronDown />}
                     className="p-button-text p-button-sm"
-                    onClick={(e) => op.current?.toggle(e)}
+                    onClick={(e: React.MouseEvent<HTMLButtonElement>) => op.current?.toggle(e)}
+
                     ref={arrowRef}
                 />
             </div>
@@ -83,7 +83,8 @@ const App: React.FC = () => {
                     <InputText
                         placeholder="Enter row count"
                         value={rowCount}
-                        onChange={(e) => setRowCount(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRowCount(e.target.value)}
+
                         style={{ width: '100%', marginBottom: '0.5rem' }}
                     />
                     <Button label="Submit" onClick={onSubmit} />
@@ -99,7 +100,8 @@ const App: React.FC = () => {
                 lazy
                 dataKey="id"
                 selection={selectedArtworks}
-                onSelectionChange={(e) => setSelectedArtworks(e.value)}
+                onSelectionChange={(e: { value: Artwork[] }) => setSelectedArtworks(e.value)}
+
                 selectionMode="multiple"
                 onPage={onPage}
             >
