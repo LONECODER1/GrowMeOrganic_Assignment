@@ -28,8 +28,8 @@ const App: React.FC = () => {
     const op = useRef<OverlayPanel>(null);
     const arrowRef = useRef(null);
     const Rows = 10;
-    
-// Function to fetch data from the API
+
+    // Fetch a single page of data
     const fetchData = (page: number, rows: number) => {
         fetch(`https://api.artic.edu/api/v1/artworks?page=${page + 1}&limit=${rows}`)
             .then(response => response.json())
@@ -40,27 +40,39 @@ const App: React.FC = () => {
             .catch(error => console.error('Internal server error:', error));
     };
 
-// Fetch initial data when the component mounts
+    // Fetch multiple pages to accumulate enough data for selection
+    const fetchMultiplePages = async (count: number): Promise<Artwork[]> => {
+        const pagesToFetch = Math.ceil(count / Rows);
+        let allSelected: Artwork[] = [];
+
+        for (let i = 0; i < pagesToFetch; i++) {
+            const response = await fetch(`https://api.artic.edu/api/v1/artworks?page=${i + 1}&limit=${Rows}`);
+            const data = await response.json();
+            allSelected = allSelected.concat(data.data);
+            if (allSelected.length >= count) break;
+        }
+
+        return allSelected.slice(0, count);
+    };
+
     useEffect(() => {
         fetchData(0, Rows);
     }, []);
 
-// Function to handle pagination and row count changes
     const onPage = ({ first = 0, page = 0, rows = 10 }: DataTableStateEvent) => {
         setFirst(first);
         fetchData(page, rows);
     };
 
-// Function to handle the submission of the row count
-    const onSubmit = () => {
+    const onSubmit = async () => {
         const count = Number(rowCount);
         if (count > 0) {
-            setSelectedArtworks(artworks.slice(0, count));
+            const selected = await fetchMultiplePages(count);
+            setSelectedArtworks(selected);
         }
         op.current?.hide();
     };
 
-    // Function to render the header checkbox with a chevron down icon
     const headerCheckboxWithChevronDown = () => {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem' }}>
@@ -68,13 +80,11 @@ const App: React.FC = () => {
                     icon={<FaChevronDown />}
                     className="p-button-text p-button-sm"
                     onClick={(e: React.MouseEvent<HTMLButtonElement>) => op.current?.toggle(e)}
-
                     ref={arrowRef}
                 />
             </div>
         );
     };
-
 
     return (
         <>
@@ -84,7 +94,6 @@ const App: React.FC = () => {
                         placeholder="Enter row count"
                         value={rowCount}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRowCount(e.target.value)}
-
                         style={{ width: '100%', marginBottom: '0.5rem' }}
                     />
                     <Button label="Submit" onClick={onSubmit} />
@@ -94,14 +103,13 @@ const App: React.FC = () => {
             <DataTable
                 value={artworks}
                 paginator
-                rows={10}
+                rows={Rows}
                 first={first}
                 totalRecords={totalRecords}
                 lazy
                 dataKey="id"
                 selection={selectedArtworks}
                 onSelectionChange={(e: { value: Artwork[] }) => setSelectedArtworks(e.value)}
-
                 selectionMode="multiple"
                 onPage={onPage}
             >
