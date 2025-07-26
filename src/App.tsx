@@ -29,7 +29,6 @@ const App: React.FC = () => {
     const arrowRef = useRef(null);
     const Rows = 10;
 
-    // Fetch a single page of data
     const fetchData = (page: number, rows: number) => {
         fetch(`https://api.artic.edu/api/v1/artworks?page=${page + 1}&limit=${rows}`)
             .then(response => response.json())
@@ -40,7 +39,6 @@ const App: React.FC = () => {
             .catch(error => console.error('Internal server error:', error));
     };
 
-    // Fetch multiple pages to accumulate enough data for selection
     const fetchMultiplePages = async (count: number): Promise<Artwork[]> => {
         const pagesToFetch = Math.ceil(count / Rows);
         let allSelected: Artwork[] = [];
@@ -68,7 +66,11 @@ const App: React.FC = () => {
         const count = Number(rowCount);
         if (count > 0) {
             const selected = await fetchMultiplePages(count);
-            setSelectedArtworks(selected);
+            setSelectedArtworks(prev => [
+                ...prev,
+                ...selected.filter(a => !prev.some(p => p.id === a.id))
+            ]);
+
         }
         op.current?.hide();
     };
@@ -79,7 +81,7 @@ const App: React.FC = () => {
                 <Button
                     icon={<FaChevronDown />}
                     className="p-button-text p-button-sm"
-                    onClick={(e: React.MouseEvent<HTMLButtonElement>) => op.current?.toggle(e)}
+                    onClick={e => op.current?.toggle(e)}
                     ref={arrowRef}
                 />
             </div>
@@ -109,7 +111,13 @@ const App: React.FC = () => {
                 lazy
                 dataKey="id"
                 selection={selectedArtworks}
-                onSelectionChange={(e: { value: Artwork[] }) => setSelectedArtworks(e.value)}
+                onSelectionChange={(e: { value: Artwork[] }) => {
+                    const pageIds = artworks.map(a => a.id);
+                    setSelectedArtworks([
+                        ...selectedArtworks.filter(a => !pageIds.includes(a.id)),
+                        ...e.value
+                    ]);
+                }}
                 selectionMode="multiple"
                 onPage={onPage}
             >
